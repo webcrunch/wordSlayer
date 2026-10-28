@@ -1,0 +1,90 @@
+name: Deploy to VPS
+
+# Runs after Test_Application has passed on main, or by hand.
+# Only in the webcrunch fork: the server's deploy keys must not be reachable from the group repo.
+on:
+  workflow_run:
+    workflows: [ "Test_Application" ]
+    types: [ completed ]
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.repository == 'webcrunch/wordSlayer' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Import secrets from Vault
+        uses: hashicorp/vault-action@v3
+        with:
+          url: https://vault.jarllindquist.com
+          method: approle
+          roleId: ${{ secrets.VAULT_ROLE_ID }}
+          secretId: ${{ secrets.VAULT_SECRET_ID }}
+          secrets: |
+            kv/data/server-deploy SSH_HOST | SERVER_HOST ;
+            kv/data/server-deploy SSH_USERNAME | SERVER_USER ;
+            kv/data/server-deploy SERVER_PORT | SERVER_PORT ;
+            kv/data/server-deploy SSH_PRIVATE_KEY | SERVER_PRIVATE_KEY ;
+            kv/data/server-deploy DOCKER_USERNAME | DOCKER_USERNAME ;
+            kv/data/server-deploy DOCKER_PASSWORD | DOCKER_PASSWORD
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_USERNAME }}
+          password: ${{ env.DOCKER_PASSWORD }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          cache-from: type=registry,ref=passwordnotsafe/wordslayer:latest
+          cache-to: type=inline
+          tags: |
+            passwordnotsafe/wordslayer:latest
+            passwordnotsafe/wordslayer:${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Copy compose file to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ env.SERVER_PRIVATE_KEY }}
+          port: ${{ env.SERVER_PORT }}
+          source: "docker-compose.prod.yml"
+          target: "/home/repos/wordslayer"
+
+      - name: Start on VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          key: ${{ env.SERVER_PRIVATE_KEY }}
+          port: ${{ env.SERVER_PORT }}
+          envs: DOCKER_USERNAME,DOCKER_PASSWORD
+          script: |
+            cd /home/repos/wordslayer
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f
+
+      - name: Check that the game answers
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS https://wordslayer.jarllindquist.com/health; then exit 0; fi
+            sleep 5
+          done
+          echo "wordslayer.jarllindquist.com/health did not answer"
+          exit 1

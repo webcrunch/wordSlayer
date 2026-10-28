@@ -1,0 +1,21 @@
+# Word Slayer on the own server, behind the shared Traefik (network traefik-net).
+# The game keeps its state in memory, so it runs as a single container.
+services:
+  wordslayer:
+    image: passwordnotsafe/wordslayer:latest
+    container_name: wordslayer
+    restart: always
+    environment:
+      - PORT=8080
+    networks:
+      - traefik-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wordslayer.rule=Host(`wordslayer.jarllindquist.com`)"
+      - "traefik.http.routers.wordslayer.entrypoints=websecure"
+      - "traefik.http.routers.wordslayer.tls.certresolver=myresolver"
+      - "traefik.http.services.wordslayer.loadbalancer.server.port=8080"
+
+networks:
+  traefik-net:
+    external: true
