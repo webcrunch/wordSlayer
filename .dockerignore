@@ -1,0 +1,17 @@
+# Secrets and local env files must never end up in an image layer.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Built inside the image, or not needed there.
+.git
+**/node_modules/
+**/bin/
+**/obj/
+backend/wwwroot/assets/
+tests/
+test-results/
+playwright-report/
+.github/
