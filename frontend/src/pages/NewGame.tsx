@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { withBase } from "../basePath";
 
 // Två olika typer för att hålla isär UI och Ordbok
 type UiLanguage = "en" | "sv";
@@ -58,7 +59,7 @@ export default function NewGame() {
         if (!sessionId) return;
 
         try {
-            const response = await fetch(`/api/game/${sessionId}/language`, {
+            const response = await fetch(withBase(`/api/game/${sessionId}/language`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

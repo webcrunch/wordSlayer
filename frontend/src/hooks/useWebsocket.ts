@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
+import { withBase } from "../basePath";
 
 /**
  * useWebsocket hook for connecting to SignalR and handling PlayerJoined events.
@@ -20,7 +21,7 @@ export function useWebsocket(
         if (connectionRef.current) return; // Förhindra dubbla anslutningar
 
         const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/gamehub")
+            .withUrl(withBase("/gamehub"))
             .withAutomaticReconnect()
             .build();
 

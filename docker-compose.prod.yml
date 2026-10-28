@@ -1,4 +1,6 @@
-# Word Slayer on the own server, behind the shared Traefik (network traefik-net).
+# Word Slayer on the own server, behind the shared Traefik (network traefik-net), at
+# jarllindquist.com/wordslayer. Traefik strips the prefix, so the backend still sees /api and
+# /gamehub; the frontend is built with VITE_BASE_PATH=/wordslayer/ and asks for the prefixed paths.
 # The game keeps its state in memory, so it runs as a single container.
 services:
   wordslayer:
@@ -11,7 +13,10 @@ services:
       - traefik-net
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.wordslayer.rule=Host(`wordslayer.jarllindquist.com`)"
+      - "traefik.http.routers.wordslayer.rule=Host(`jarllindquist.com`) && PathPrefix(`/wordslayer`)"
+      - "traefik.http.routers.wordslayer.priority=20"
+      - "traefik.http.routers.wordslayer.middlewares=wordslayer-strip@docker"
+      - "traefik.http.middlewares.wordslayer-strip.stripprefix.prefixes=/wordslayer"
       - "traefik.http.routers.wordslayer.entrypoints=websecure"
       - "traefik.http.routers.wordslayer.tls.certresolver=myresolver"
       - "traefik.http.services.wordslayer.loadbalancer.server.port=8080"

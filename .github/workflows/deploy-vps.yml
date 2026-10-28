@@ -51,6 +51,8 @@ jobs:
           push: true
           cache-from: type=registry,ref=passwordnotsafe/wordslayer:latest
           cache-to: type=inline
+          build-args: |
+            VITE_BASE_PATH=/wordslayer/
           tags: |
             passwordnotsafe/wordslayer:latest
             passwordnotsafe/wordslayer:${{ github.event.workflow_run.head_sha || github.sha }}
@@ -83,8 +85,8 @@ jobs:
       - name: Check that the game answers
         run: |
           for i in $(seq 1 20); do
-            if curl -fsS https://wordslayer.jarllindquist.com/health; then exit 0; fi
+            if curl -fsS https://jarllindquist.com/wordslayer/health; then exit 0; fi
             sleep 5
           done
-          echo "wordslayer.jarllindquist.com/health did not answer"
+          echo "jarllindquist.com/wordslayer/health did not answer"
           exit 1

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import swedenFlag from "../assets/sweden.png";
 import ukFlag from "../assets/uk.png";
+import { withBase } from "../basePath";
 
 type Language = "en" | "sv";
 
@@ -18,7 +19,7 @@ export default function JoinGame() {
         const fetchGameInfo = async (code: string) => {
             try {
                 // Vi använder samma GET-endpoint som PlayGame använder
-                const response = await fetch(`/api/game/${code}`);
+                const response = await fetch(withBase(`/api/game/${code}`));
 
                 if (response.ok) {
                     const data = await response.json();
@@ -79,7 +80,7 @@ export default function JoinGame() {
 
         try {
             // Tell the backend to join the room as Player 2.
-            const response = await fetch(`/api/game/${gameCode.trim()}/join`, {
+            const response = await fetch(withBase(`/api/game/${gameCode.trim()}/join`), {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
