@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from 'react-router-dom';
 import swedenFlag from "../assets/sweden.png";
 import ukFlag from "../assets/uk.png";
+import { withBase } from "../basePath";
 
 type Language = "en" | "sv";
 
@@ -45,7 +46,7 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/newGame', {
+      const response = await fetch(withBase('/api/newGame'), {
         method: 'GET',
         credentials: 'same-origin',
         cache: 'no-store'

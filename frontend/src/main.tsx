@@ -3,18 +3,19 @@ import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
+import { routerBasename } from './basePath';
 
 const isTest =
   typeof window !== "undefined" &&
   window.location.search.includes("test");
 
 const Root = isTest ? (
-  <BrowserRouter>
+  <BrowserRouter basename={routerBasename}>
     <App />
   </BrowserRouter>
 ) : (
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <App />
     </BrowserRouter>
   </React.StrictMode>

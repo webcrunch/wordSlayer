@@ -5,6 +5,9 @@ WORKDIR /src
 COPY frontend/package*.json ./frontend/
 RUN cd frontend && npm ci
 COPY frontend/ ./frontend/
+# "/" by default (Render); the own server serves the game under /wordslayer/.
+ARG VITE_BASE_PATH=/
+ENV VITE_BASE_PATH=${VITE_BASE_PATH}
 RUN cd frontend && npm run build
 
 # Stage 2: Build the .NET backend and bundle with the frontend output

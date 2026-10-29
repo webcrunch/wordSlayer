@@ -8,6 +8,7 @@ import ukFlag from "../assets/uk.png";
 
 type Language = "en" | "sv";
 import { useSound } from "../hooks/useSound";
+import { withBase } from "../basePath";
 
 
 interface BackendGameSession {
@@ -84,7 +85,7 @@ export default function PlayGame() {
     myName === "Player 2" ? "player2" : "player1";
 
   // GAME MUSIC
-  const gameMusic = useSound("/sounds/game-music.mp3", { loop: true });
+  const gameMusic = useSound(withBase("/sounds/game-music.mp3"), { loop: true });
 
   // Auto-play when both players are connected
   useEffect(() => {
@@ -141,7 +142,7 @@ export default function PlayGame() {
 
       setLoading(true);
       try {
-        const res = await fetch(`/api/game/${sessionId}`);
+        const res = await fetch(withBase(`/api/game/${sessionId}`));
         if (!res.ok) throw new Error(texts[uiLang].fetchError);
 
         const game = (await res.json()) as BackendGameSession;
@@ -207,7 +208,7 @@ export default function PlayGame() {
     const interval = setInterval(() => {
       setTimer((t) => {
         if (t <= 1) {
-          fetch(`/api/game/${sessionId}/timeout?playerId=${myName}`, {
+          fetch(withBase(`/api/game/${sessionId}/timeout?playerId=${myName}`), {
             method: "POST",
           }).catch(console.error);
           setTimerRunning(false);
@@ -222,7 +223,7 @@ export default function PlayGame() {
 
   const handleLeaveGame = async () => {
     // 1. Berätta för servern att jag ger upp (HP blir 0)
-    fetch(`/api/game/${sessionId}/surrender?playerId=${myName}`, { method: "POST" });
+    fetch(withBase(`/api/game/${sessionId}/surrender?playerId=${myName}`), { method: "POST" });
 
     // 2. För den som ger upp: Skicka hem direkt
     navigate("/");
@@ -257,7 +258,7 @@ export default function PlayGame() {
     setWord("");
 
     try {
-      const res = await fetch(`/api/game/${sessionId}/playword`, {
+      const res = await fetch(withBase(`/api/game/${sessionId}/playword`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Här skickar vi dictLang (ordboken) till backend, INTE uiLang
@@ -413,7 +414,7 @@ export default function PlayGame() {
             >
               {isGameOver ? (
                 <button
-                  onClick={() => (window.location.href = "/")}
+                  onClick={() => (window.location.href = withBase("/"))}
                   style={{
                     padding: "10px 20px",
                     fontSize: "1.2rem",
