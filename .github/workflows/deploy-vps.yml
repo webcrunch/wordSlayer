@@ -36,7 +36,8 @@ jobs:
             kv/data/server-deploy SERVER_PORT | SERVER_PORT ;
             kv/data/server-deploy SSH_PRIVATE_KEY | SERVER_PRIVATE_KEY ;
             kv/data/server-deploy DOCKER_USERNAME | DOCKER_USERNAME ;
-            kv/data/server-deploy DOCKER_PASSWORD | DOCKER_PASSWORD
+            kv/data/server-deploy DOCKER_PASSWORD | DOCKER_PASSWORD ;
+            kv/data/server-deploy SSH_HOST_FINGERPRINT | SSH_HOST_FINGERPRINT
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -57,28 +58,35 @@ jobs:
             passwordnotsafe/wordslayer:latest
             passwordnotsafe/wordslayer:${{ github.event.workflow_run.head_sha || github.sha }}
 
+      # The two appleboy steps receive the server's SSH key: pinned to a commit, and they check the
+      # server against the fingerprint in Vault instead of trusting any host at the address.
       - name: Copy compose file to VPS
-        uses: appleboy/scp-action@master
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
         with:
           host: ${{ env.SERVER_HOST }}
           username: ${{ env.SERVER_USER }}
           key: ${{ env.SERVER_PRIVATE_KEY }}
           port: ${{ env.SERVER_PORT }}
+          fingerprint: ${{ env.SSH_HOST_FINGERPRINT }}
           source: "docker-compose.prod.yml"
           target: "/home/repos/wordslayer"
 
       - name: Start on VPS
-        uses: appleboy/ssh-action@master
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
         with:
           host: ${{ env.SERVER_HOST }}
           username: ${{ env.SERVER_USER }}
           key: ${{ env.SERVER_PRIVATE_KEY }}
           port: ${{ env.SERVER_PORT }}
+          fingerprint: ${{ env.SSH_HOST_FINGERPRINT }}
           envs: DOCKER_USERNAME,DOCKER_PASSWORD
           script: |
+            set -e
             cd /home/repos/wordslayer
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
             docker compose -f docker-compose.prod.yml pull
+            # The login is only needed for the pull; do not leave the password on the server.
+            docker logout
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
 
