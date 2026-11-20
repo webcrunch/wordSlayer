@@ -11,7 +11,8 @@ on:
 jobs:
     deploy:
         # Kör bara om testerna och bygget i Test_Application faktiskt gick grönt
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        # Render belongs to the group repo; the webcrunch fork deploys with deploy-vps.yml.
+        if: ${{ github.repository == 'GroupProjectNBI/wordSlayer' && github.event.workflow_run.conclusion == 'success' }}
         runs-on: ubuntu-latest
 
         steps:
